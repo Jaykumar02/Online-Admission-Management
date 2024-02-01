@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aptitude Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        #questions-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .question-container {
+            margin-bottom: 15px;
+        }
+
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+
+        #showResultsBtn, #showCorrectBtn {
+            display: none;
+            margin-top: 10px;
+            background-color: #3498db;
+        }
+
+        #marks-container, #correct-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .marks, .correct-answers {
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            z-index: 999;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .popup h2 {
+            margin-top: 0;
+        }
+
+        .close-btn {
+            cursor: pointer;
+            font-weight: bold;
+            color: #333;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        #results-table, #correct-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #results-table th, #results-table td, #correct-table th, #correct-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #results-table th, #correct-table th {
+            background-color: #3498db;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div id="questions-container"></div>
+<button onclick="submitAnswers()">Submit</button>
+<button id="showResultsBtn" onclick="showResults()">Show Results</button>
+<button id="showCorrectBtn" onclick="showCorrectAnswers()">Show Correct Answers</button>
+<div id="marks-container"></div>
+<div id="correct-container"></div>
+
+<!-- Popup for Thank You message -->
+<div class="overlay" id="overlay"></div>
+<div class="popup" id="popup">
+    <span class="close-btn" onclick="closePopup()">X</span>
+    <h2>Thank You for Submitting!</h2>
+    <p>Your score will be displayed in the Show Results section.</p>
+</div>
+
+<script>
+    const questions = [
+        {
+            question: "The ratio of boys to girls in a class is 3:5. If there are 36 girls, how many boys are there in the class?",
+            options: ["23", "15", "22", "27"],
+            correctAnswer: "22"
+        },
+        {
+            question: "Number of primitive data types in Java are?",
+            options: ["6", "9", "7", "8"],
+            correctAnswer: "8"
+        },
+        {           
+            question: "Select the valid statement.",
+            options: ["char[] ch = new char(5)", "char[] ch = new char[5]", "char[] ch = new char()", "char[] ch = new char[]"],
+            correctAnswer: "char[] ch = new char[5]"
+        },
+        {
+            question: "When an array is passed to a method, what does the method receive?",
+            options: ["The reference of the array", "A copy of the array", "Length of array", "Copy of first element"],
+            correctAnswer: "The reference of the array"
+        },
+        {
+            question: " In which of the following is toString() method defined?",
+            options: ["java.lang.String", "java.lang.Object", "java.lang.util", "None"],
+            correctAnswer: "java.lang.Object"
+        },
+        {
+            question: "compareTo() returns",
+            options: ["True", "False", "An int value ", "None"],
+            correctAnswer: "An int value"
+        },
+    ];
+
+    const questionsContainer = document.getElementById("questions-container");
+    const showResultsBtn = document.getElementById("showResultsBtn");
+    const showCorrectBtn = document.getElementById("showCorrectBtn");
+    const marksContainer = document.getElementById("marks-container");
+    const correctContainer = document.getElementById("correct-container");
+    const overlay = document.getElementById("overlay");
+    const popup = document.getElementById("popup");
+    let userAnswers = [];
+
+    questions.forEach((q, index) => {
+        const questionElement = document.createElement("div");
+        questionElement.classList.add("question-container");
+        questionElement.innerHTML = `
+            <p>${index + 1}. ${q.question}</p>
+            ${q.options.map((opt, i) => `
+                <input type="radio" name="q${index}" value="${opt}" id="q${index}o${i}">
+                <label for="q${index}o${i}">${opt}</label><br>
+            `).join('')}
+        `;
+        questionsContainer.appendChild(questionElement);
+    });
+
+    function submitAnswers() {
+        userAnswers = [];
+
+        questions.forEach((q, index) => {
+            const selectedOption = document.querySelector(`input[name="q${index}"]:checked`);
+            if (selectedOption) {
+                const userAnswer = selectedOption.value;
+                userAnswers.push({
+                    questionNumber: index + 1,
+                    correctAnswer: q.correctAnswer,
+                    userAnswer: userAnswer
+                });
+            }
+        });
+
+        // Show Thank You popup
+        overlay.style.display = "block";
+        popup.style.display = "block";
+    }
+
+    function showResults() {
+        const totalQuestions = questions.length;
+        const correctAnswers = userAnswers.filter(answer => answer.correctAnswer === answer.userAnswer).length;
+
+        // Display marks
+        marksContainer.innerHTML = `
+            <div class="marks">
+                <h2>Your Results</h2>
+                <p>Marks Obtained: ${correctAnswers}/${totalQuestions}</p>
+            </div>
+        `;
+
+        // Show results container and correct button
+        marksContainer.style.display = "block";
+        showCorrectBtn.style.display = "inline-block";
+    }
+
+    function showCorrectAnswers() {
+        // Display correct answers table
+        correctContainer.innerHTML = `
+            <h2>Correct Answers</h2>
+            <table id="correct-table">
+                <thead>
+                    <tr>
+                        <th>Question Number</th>
+                        <th>Correct Answer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${questions.map((q, index) => `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${q.correctAnswer}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+
+        // Show correct answers container
+        correctContainer.style.display = "block";
+    }
+
+    // Close Thank You popup
+    function closePopup() {
+        overlay.style.display = "none";
+        popup.style.display = "none";
+        showResultsBtn.style.display = "inline-block";
+    }
+</script>
+
+</body>
+</html>
